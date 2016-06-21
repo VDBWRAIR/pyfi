@@ -63,7 +63,7 @@ import Data.Monoid (mconcat)
 modules :: IORef (Map.Map String RawPyObject)
 modules = unsafePerformIO $ newIORef (Map.empty)
 
-data P
+data P = P
 type RawPyObject = (Ptr P)
 data PyObject a = PyObject (ForeignPtr P) deriving Show
 
@@ -114,12 +114,10 @@ parseException s = let (t, v) = splitAt (fromJust $ (elemIndex ',' s)) s
 checkError :: String -> IO ()
 checkError funcdef = do
   cs <- c_checkError
-  if cs == nullPtr
-  then return ()
-  else do
+  if (cs == nullPtr) then (return ()) else do
     s <- peekCString cs
     free cs
-    throw . parseException $ mconcat[s, "\n", take 70 $ cycle "-", "\n", funcdef]
+    throw $ parseException $ mconcat [s, "\n", take 70 $ cycle "-", "\n", funcdef]
 
 initialize :: IO ()
 initialize = do
@@ -187,9 +185,7 @@ getFunc :: String -> String -> IO RawPyObject
 getFunc s argTypes = do
     currentModules <- readIORef $ modules
     key <- return $ hash s
-    if Map.member "initialized" currentModules then
-      return ()
-    else initialize
+    if Map.member "initialized" currentModules then return () else initialize
     case Map.lookup key currentModules of
       Just p -> return p
       Nothing -> do 
